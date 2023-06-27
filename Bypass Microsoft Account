@@ -1,0 +1,6 @@
+# Bypass Microsft account login at setup.
+# Use Shift + Ctrl + F10 or Shift + F10 to access CMD
+cd C:\Windows\System32
+ncpa.cpl
+# Disable Wi-Fi or Ethernet Connection
+oobe\bypassnro
