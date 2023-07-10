@@ -1,0 +1,23 @@
+
+
+#CMD
+#You can use the 7z.exe command-line tool: 
+
+C:\Path\to\7z.exe a C:\DestinationFolder\Archive.7z C:\SourceFolder\ -x!FolderToExclude -x!FileToExclude.extension
+
+
+# Retrieve archive 
+
+C:\Program Files\7-Zip\7z.exe l C:\Users\fetime\Downloads\Archive.7z
+
+
+
+#Powershell
+#You can use the Start-Process cmdlet to run the 7z.exe command-line tool:
+#You should provide the full path to the 7z.exe file
+
+& C:\Path\to\7z.exe a C:\DestinationFolder\Archive.7z C:\SourceFolder\ -x!FolderToExclude -x!FileToExclude.extension
+
+# Retrieve archive 
+
+& C:\Program Files\7-Zip\7z.exe l C:\Users\fetime\Downloads\Archive.7z
