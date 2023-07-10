@@ -1,0 +1,18 @@
+Procedure
+
+1.	Sign into Admin portal in Outlook https://portal.office.com/Adminportal/Home/#/homepage
+
+2.	Edit a User > Search User > Give yourself appropriate User’s Mailbox Permission 
+
+
+3.	Open your mailbox in Outlook using desktop version of Outlook.
+
+4.	Navigate to User’s mailbox (In the File tab, click on “Open & Export > Other User’s Folder”)
+
+
+5.	In the “Open Other User’s Folder” windows, enter the email address of the user > Select User > OK.
+
+6.	On the user’s folder > File > Option at the bottom left > Advanced > Scroll down click Export > Choose “Export to a file” then next > select Outlook Data File(.pst) > Select User Folder and check “Include subfolders” then next > Choose save file location > Finish > Click ok > Wait for export process to complete > OK.
+
+
+7.	Open Desktop version of Outlook > Click “File” tab > Open & Export > Select “Open Outlook Data File” > Navigate and Select the “.pst” document > Expand the “.pst” to view the content.
