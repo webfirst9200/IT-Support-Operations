@@ -1,32 +1,32 @@
-# Author    : Ranjit Kumar Swain
-# Web       : www.ranjitswain.com
-# YouTube   : https://www.youtube.com/c/ranjitswain
-# GitHub    : https://github.com/ranjit4github
+# Author    : fetime
+# Web       : fetime.webfirst.com
+# GitHub    : https://github.com/webfirst9200/IT-Support-Operations/edit/main/lamp-stack.yml
 ########################################################
 
 ---
- - hosts: lampserver
+ - hosts: lampstack
    become: true
    vars:
-     mysql_root_password: "Password01"
+     mysql_root_password: "WebFirst"
    tasks:
-     - name: Install Apache
-       ansible.builtin.yum: name=httpd state=present update_cache=yes
+     - name: Install Apache2
+       ansible.builtin.apt: name=apache2 state=present update_cache=yes
 
      - name: Install PHP
-       ansible.builtin.yum : name={{item}} state=present update_cache=yes
+       ansible.builtin.apt : name={{item}} state=present update_cache=yes
        with_items:
             - php
             - php-mysql
+            - libapache2-mod-php
             
      - name: Deploy website by copying the content
        ansible.builtin.copy:
          src: /home/ec2-user/TechnicianReport/
          dest: /var/www/html/TechnicianReport/
          
-     - name: Start Apache Server
+     - name: Start Apache2 Server
        service:
-         name: httpd
+         name: apache2
          enabled: true
          state: started
          
@@ -48,7 +48,7 @@
        become_user: root
        
      - name: Install Mariadb
-       ansible.builtin.yum: name={{item}} state=present update_cache=yes
+       ansible.builtin.apt: name={{item}} state=present update_cache=yes
        with_items:
             - MariaDB-server
             - MariaDB-client         
@@ -66,7 +66,7 @@
          state: started
          
      - name: Install dependency for mysql_db module
-       ansible.builtin.yum: name=MySQL-python state=present
+       ansible.builtin.apt: name=MySQL-python state=present
        
      - name: mysql root password
        community.mysql.mysql_user:
