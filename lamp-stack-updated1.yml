@@ -1,0 +1,143 @@
+# Author    : fetime
+# Web       : fetime.webfirst.com
+# GitHub    : https://github.com/webfirst9200/IT-Support-Operations/edit/main/lamp_stack.yaml
+############################################################################################
+
+---
+- hosts: lampserver
+  become: true
+  vars:
+    mysql_root_password: "WebFirsto1"
+    domain_name: "fetime.webfirst.com"
+    document_root: "/var/www/{{ domain_name }}"
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Install Apache
+      ansible.builtin.apt:
+        name: apache2
+        state: present
+
+    - name: Install PHP and required extensions
+      ansible.builtin.apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      loop:
+        - php
+        - libapache-mod-php
+        - php-fpm
+        - php-mysql
+        - php-curl
+        - php-gd
+        - php-mbstring
+        - php-xml
+
+    - name: Deploy website by copying the content
+      ansible.builtin.copy:
+        src: /home/fetime/test_site.php/
+        dest: "{{ document_root }}"
+
+    - name: Create the document root directory
+      ansible.builtin.file:
+        path: "{{ document_root }}"
+        state: directory
+        owner: "{{ ansible_ssh_user }}"
+        group: "{{ ansible_ssh_user }}"
+        mode: '0755'
+
+    - name: Configure Apache virtual host
+      ansible.builtin.copy:
+        content: |
+          <VirtualHost *:80>
+              ServerName {{ domain_name }}
+              ServerAlias www.{{ domain_name }}
+              ServerAdmin webmaster@localhost
+              DocumentRoot {{ document_root }}
+              ErrorLog \${APACHE_LOG_DIR}/{{ domain_name }}_error.log
+              CustomLog \${APACHE_LOG_DIR}/{{ domain_name }}_access.log combined
+          </VirtualHost>
+        dest: /etc/apache2/sites-available/{{ domain_name }}.conf
+      notify:
+        - Reload Apache
+
+    - name: Enable new Apache site
+      ansible.builtin.command: a2ensite {{ domain_name }}
+      become: yes
+
+    - name: Disable default Apache site
+      ansible.builtin.command: a2dissite 000-default
+      become: yes
+
+    - name: Test Apache configuration
+      ansible.builtin.command: apache2ctl configtest
+      become: yes
+
+    - name: Start Apache service
+      ansible.builtin.service:
+        name: apache2
+        state: started
+        enabled: yes
+
+    - name: Download MariaDB repo setup script
+      ansible.builtin.get_url:
+        url: https://downloads.mariadb.com/MariaDB/mariadb_repo_setup
+        dest: /home/fetime/mariadb_repo_setup
+
+    - name: Run MariaDB repo setup script
+      ansible.builtin.command:
+        cmd: "bash /home/fetime/mariadb_repo_setup --mariadb-server-version=10.12"
+      become: yes
+
+    - name: Install MariaDB
+      ansible.builtin.apt:
+        name: mariadb-server
+        state: latest
+        update_cache: yes
+
+    - name: Start MariaDB
+      ansible.builtin.service:
+        name: mysql
+        enabled: yes
+        state: started
+
+    - name: Install dependency for mysql_db module
+      ansible.builtin.apt:
+        name: python3-mysqldb
+        state: present
+
+    - name: Set MySQL root password
+      community.mysql.mysql_user:
+        name: root
+        password: "{{ mysql_root_password }}"
+        host: localhost
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        state: present
+
+    - name: Create a new database
+      community.mysql.mysql_db:
+        name: test_database
+        state: present
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+
+   # - name: Import database from dump.sql
+    #  community.mysql.mysql_db:
+     #   name: mbdatabase
+      #  state: import
+     #   target: /tmp/dump.sql
+       # login_unix_socket: /var/run/mysqld/mysqld.sock
+       # encoding: latin1
+
+  handlers:
+    - name: Reload Apache
+      ansible.builtin.service:
+        name: apache2
+        state: reloaded
+
+    - name: Reload MySQL
+      ansible.builtin.service:
+        name: mysql
+        state: reloaded 
+
