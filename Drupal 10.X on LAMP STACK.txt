@@ -1,0 +1,183 @@
+# Update apt caches.
+sudo apt update
+
+# Install MySQL (or in this case, MariaDB)
+sudo apt install -y mariadb-server mariadb-client
+
+# Run through the installation process.
+sudo mysql_secure_installation
+
+#Create a Drupal database while logged into the MySQL cli.
+sudo mysql -u root
+
+CREATE DATABASE drupal;
+GRANT ALL ON drupal.* TO 'drupal'@'localhost' IDENTIFIED BY 'mypassword';
+FLUSH PRIVILEGES;
+\q
+
+9. Import Database
+mysql -u database_user -p database < backup.sql
+
+# Install PHP.
+sudo apt install -y php php-{cli,fpm,json,common,mysql,zip,gd,intl,mbstring,curl,xml,pear,tidy,soap,bcmath,xmlrpc,apcu,sqlite3,readline,opcache,gd,readline}
+
+# Install Apache with mod_php. ( php_fpm is a viable option for ptimization)
+sudo apt install -y apache2 libapache2-mod-php
+
+# Configure a some important PHP settings.
+sudo nano /etc/php/8.1/apache2/php.ini
+
+#Find the following lines and change them to these settings and save the file:
+
+memory_limit = 512M
+date.timezone = America/New York
+
+# Configure a Virtual host for Apache.
+sudo mkdir /var/www/html/your_domain
+sudo chown www-data:www-data -R /var/www/html/your_domain
+sudo chmod 775 -R /var/www/html/your_domain
+sudo nano /etc/apache2/sites-available/your_domain.conf
+
+<VirtualHost *:80>
+    ServerAdmin webmaster@webfirst.com
+    DocumentRoot /var/www/html/webfirst.com/webfirst-prod/web
+    ServerName webfirst.com
+    ServerAlias www.webfirst.com
+
+    Redirect / https://www.webfirst.com/
+
+    <Directory /var/www/webfirst-prod/web/>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+</Directory>
+
+    ErrorLog /var/log/apache2/webfirst-prod-error.log
+    CustomLog /var/log/apache2/webfirst-prod-access.log combined
+
+    <IfModule mod_dir.c>
+        DirectoryIndex index.php index.html
+</IfModule>
+
+</VirtualHost>
+
+<VirtualHost *:443>
+ ServerName webfirst.com
+  ServerAlias www.webfirst.com
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/html/webfirst.com/webfirst-prod/web
+
+
+<Directory /var/www/html/webfirst.com/webfirst-prod/web>
+            Options FollowSymLinks
+            AllowOverride All
+            Require all granted
+</Directory>
+
+<FilesMatch "\.(cgi|shtml|phtml|php)$">
+                SSLOptions +StdEnvVars
+</FilesMatch>
+
+  SSLEngine on
+ SSLCertificateFile /etc/ssl/star.webfirst.com.2023-01-06.crt
+  SSLCertificateKeyFile /etc/ssl/star.webfirst.com.2023-01-06.key
+#  SSLCertificateChainFile /etc/apache2/ssl/example.com.chain
+ ErrorLog ${APACHE_LOG_DIR}/error.log
+ CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+
+# Configure a Drupal virtual host for Apache.
+sudo nano /etc/apache2/sites-available/drupal.conf
+
+<VirtualHost *:80>
+     ServerName example.com
+     ServerAlias www.example.com
+     ServerAdmin webmaster@example.com
+     DocumentRoot /var/www/html/drupal/web
+
+     CustomLog ${APACHE_LOG_DIR}/access.log combined
+     ErrorLog ${APACHE_LOG_DIR}/error.log
+
+      <Directory /var/www/html/drupal/web>
+            Options Indexes FollowSymLinks
+            AllowOverride All
+            Require all granted
+            RewriteEngine on
+            RewriteBase /
+            RewriteCond %{REQUEST_FILENAME} !-f
+            RewriteCond %{REQUEST_FILENAME} !-d
+            RewriteRule ^(.*)$ index.php?q=$1 [L,QSA]
+   </Directory>
+</VirtualHost>
+
+# Finish configuring Apache and restart it to pick up the new site.
+sudo a2enmod rewrite
+sudo a2ensite your_domain.conf
+sudo a2dissite 000-default.conf
+sudo systemctl restart apache2
+9. Install and enable ssl, enable site, disable default apache site, check for syntax error, Reload apache.
+sudo apt install openssl -y
+sudo a2enmod ssl
+sudo a2ensite your_domain
+sudo a2dissite 000-default
+sudo apache2ctl configtest
+sudo systemctl reload apache2
+
+# Install Composer (https://getcomposer.org/download/)
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php composer-setup.php
+sudo mv composer.phar /usr/local/bin/composer
+
+#Troubleshoot Drupal site
+
+cd /var/www/html/drupal/web/site/default &&
+
+cp default.settings.php settings.php
+
+# Update $settings['trusted_host_patterns']
+
+# For example edit the site to only allowed to run from www.example.com.
+
+$settings['trusted_host_patterns'] = [
+  '^www\.example\.com$',
+];
+
+
+12. Configure Apache to use PHP-FPM
+10. Install PHP-FPM
+
+sudo apt install python-software-properties 
+sudo add-apt-repository ppa:ondrej/php 
+sudo apt install php8.1 php8.1-fpm 
+sudo systemctl start php8.1-fpm
+sudo systemctl enable php8.1-fpm 
+
+sudo a2enmod proxy_fcgi proxy 
+# Add PHP-FPM to the configuration file
+sudo nano /etc/apache2/sites-available/webfirst.com.conf 
+<VirtualHost *:80>
+    ServerName example.com
+    ServerAlias www.example.com
+    DocumentRoot /var/www/html
+ 
+    <Directory /var/www/html>
+        Options -Indexes +FollowSymLinks +MultiViews
+        AllowOverride All
+        Require all granted
+    </Directory>
+ 
+    <FilesMatch \.php$>
+        SetHandler "proxy:unix:/run/php/php8.1-fpm.sock|fcgi://localhost/"
+    </FilesMatch>
+ 
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+sudo a2ensite webfirst.com.conf 
+sudo systemctl reload apache2 
+
+10. Downlaod and Install Composer 
+
+sudo apt install compser # Inside Webfirst documentRoot directory
