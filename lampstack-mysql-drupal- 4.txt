@@ -1,0 +1,164 @@
+
+ Migration of webfirst.com site to a VM.
+
+On controller machine / local machine
+
+1. Edit localhost file with server IP address & domain name:
+
+sudo nano /etc/hosts
+
+2. Copy necessary files and folders to Server:
+
+scp -r <file or folder> remote_user@remote_server_ip:
+ 
+a. ssl certificates & key
+b. webfirst-prod site
+c. sql_database
+
+On Server / Remote Server
+
+3. Install Apache & Verify
+sudo apt update &&
+sudo apt install apache2 -y
+http://server_ip 
+
+4. Install Mysql_server & Verify
+sudo apt install mysql-server -y &&
+sudo mysql
+exit
+
+5. Secure Root Access to Server
+sudo mysql_secure_installation
+
+6. Create Database, User & User's Password, 
+Give User Permission to Database, Make changes go into effect immediately, 
+Test User Credential, Import database (could be done later).
+sudo mysql
+CREATE DATABASE example_database;
+CREATE USER 'example_user'@'localhost' IDENTIFIED BY 'password'; # avoid '%' in place of 'localhost' for security purpose
+GRANT ALL PRIVILEGES ON example_database.* TO 'example_user'@'localhost;
+FLUSH PRIVILEGES;
+exit
+mysql -u username -p database < database.sql
+mysql -u your_username -p
+use database;
+show tables;
+exit
+
+7. Install PHP and Modules, Check version,
+sudo apt install php libapache2-mod-php php-mysql (suggested additional modules: sudo apt install php php-cli php-common php-curl php-gd php-mbstring php-mysql php-opcache php-readline php-sqlite3 php-xml php-zip php-apcu
+php -v
+
+8. Create Virtual Host to host website(s), Give Permission & Ownership,
+Add Apache site Configuration, Install & Enable SSL, Enable site, Disable default apache site, 
+Test Configuration is error-free, Reload Apache, Load webdocument root, Test site domain or ip_address
+sudo mkdir /var/www/html/your_domain
+sudo chown www-data:www-data -R /var/www/html/your_domain
+sudo chmod 775 -R /var/www/html/your_domain
+sudo nano /etc/apache2/sites-available/your_domain.conf
+
+<VirtualHost *:80>
+    ServerAdmin webmaster@webfirst.com
+    DocumentRoot /var/www/html/webfirst.com/webfirst-prod/web
+    ServerName webfirst.com
+    ServerAlias www.webfirst.com
+
+    Redirect / https://www.webfirst.com/
+
+    <Directory /var/www/webfirst-prod/web/>
+        Options Indexes FollowSymLinks
+        AllowOverride All
+        Require all granted
+</Directory>
+
+    ErrorLog /var/log/apache2/webfirst-prod-error.log
+    CustomLog /var/log/apache2/webfirst-prod-access.log combined
+
+    <IfModule mod_dir.c>
+        DirectoryIndex index.php index.html
+</IfModule>
+
+</VirtualHost>
+
+<VirtualHost *:443>
+ ServerName webfirst.com
+  ServerAlias www.webfirst.com
+  ServerAdmin webmaster@localhost
+  DocumentRoot /var/www/html/webfirst.com/webfirst-prod/web
+
+
+<Directory /var/www/html/webfirst.com/webfirst-prod/web>
+            Options FollowSymLinks
+            AllowOverride All
+            Require all granted
+</Directory>
+
+<FilesMatch "\.(cgi|shtml|phtml|php)$">
+                SSLOptions +StdEnvVars
+</FilesMatch>
+
+  SSLEngine on
+ SSLCertificateFile /etc/ssl/star.webfirst.com.2023-01-06.crt
+  SSLCertificateKeyFile /etc/ssl/star.webfirst.com.2023-01-06.key
+#  SSLCertificateChainFile /etc/apache2/ssl/example.com.chain
+ ErrorLog ${APACHE_LOG_DIR}/error.log
+ CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+9. Install and enable ssl, enable site, disable default apache site, check for syntax error, Reload apache.
+sudo apt install openssl -y
+sudo a2enmod ssl
+sudo a2ensite your_domain
+sudo a2dissite 000-default
+sudo apache2ctl configtest
+sudo systemctl reload apache2
+
+
+9. Import Database
+mysql -u database_user -p database < backup.sql
+
+(For optimized php - Optional configuration)
+
+10. Install PHP-FPM
+
+sudo apt install python-software-properties 
+sudo add-apt-repository ppa:ondrej/php 
+sudo apt install php8.2 php8.1-fpm 
+sudo systemctl start php8.1-fpm
+sudo systemctl enable php8.1-fpm 
+
+12. Configure Apache to use PHP-FPM
+
+sudo a2enmod proxy_fcgi proxy 
+# Add PHP-FPM to the configuration file
+sudo nano /etc/apache2/sites-available/webfirst.com.conf 
+<VirtualHost *:80>
+    ServerName example.com
+    ServerAlias www.example.com
+    DocumentRoot /var/www/html
+ 
+    <Directory /var/www/html>
+        Options -Indexes +FollowSymLinks +MultiViews
+        AllowOverride All
+        Require all granted
+    </Directory>
+ 
+    <FilesMatch \.php$>
+        SetHandler "proxy:unix:/run/php/php8.1-fpm.sock|fcgi://localhost/"
+    </FilesMatch>
+ 
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+
+sudo a2ensite webfirst.com.conf 
+sudo systemctl reload apache2 
+
+10. Downlaod and Install Composer 
+
+sudo apt install compser # Inside Webfirst documentRoot directory
+
+
+
+
+
