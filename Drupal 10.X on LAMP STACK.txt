@@ -38,6 +38,7 @@ sudo chown www-data:www-data -R /var/www/html/your_domain
 sudo chmod 775 -R /var/www/html/your_domain
 sudo nano /etc/apache2/sites-available/your_domain.conf
 
+# Option 1
 <VirtualHost *:80>
     ServerAdmin webmaster@webfirst.com
     DocumentRoot /var/www/html/webfirst.com/webfirst-prod/web
@@ -86,7 +87,7 @@ sudo nano /etc/apache2/sites-available/your_domain.conf
  CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 
-
+# Option 2
 # Configure a Drupal virtual host for Apache.
 sudo nano /etc/apache2/sites-available/drupal.conf
 
